@@ -8,7 +8,7 @@ from starlette import status
 from starlette.responses import Response
 
 from server.app import app
-from server.api.schemas import (
+from server.web_api.schemas import (
     GetUserRequestSchema, GetUserResponseSchema, UserItemSchema,
     GetRestaurantRequestSchema, GetRestaurantResponseSchema,
     GetRecommendationsFromPreferencesSchema, RecommendationsRequestSchema,
