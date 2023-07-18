@@ -1,3 +1,4 @@
+import sys
 import uuid
 from datetime import datetime
 from typing import Optional
@@ -6,7 +7,8 @@ from uuid import UUID
 from fastapi import HTTPException
 from starlette import status
 from starlette.responses import Response
-
+from server.repository.unit_of_work import UnitOfWork
+from server.repository.restaurants_repository import RestaurantsRepository
 from server.app import app
 from server.web_api.schemas import (
     GetUserRequestSchema, GetUserResponseSchema, UserItemSchema,
@@ -16,9 +18,16 @@ from server.web_api.schemas import (
     RateRestaurantSchema, GetMultipleRestaurantsRequestSchema,
     GetMultipleRestaurantsResponseSchema)
 
+@app.get("/")
+async def test():
+    return {"message": "Hello World"}
 
 @app.get("/users/{user_id}/space", response_model=GetUserResponseSchema)
 def get_user_details(user_id: UUID):
+    # with UnitOfWork() as unit_of_work:
+    #     repo = RestaurantsRepository(unit_of_work.session)
+    #     user = repo.get(user_id)
+    # return {"user": user}
     pass
 
 
@@ -83,3 +92,13 @@ def get_recommendations(preferences: GetRecommendationsFromPreferencesSchema):
 def get_recommendations_from_user(
         user_id: UUID, recommendation_list_details: RecommendationsRequestSchema):
     pass
+
+
+def receive_signal(signalNumber, frame):
+    print('Received:', signalNumber)
+    sys.exit()
+
+@app.on_event("startup")
+async def startup_event():
+    import signal
+    signal.signal(signal.SIGINT, receive_signal)
