@@ -4,7 +4,7 @@ Contains common business logic types and enums
 
 from enum import Enum
 
-from pydantic import BaseModel, conint
+from pydantic import BaseModel, confloat
 
 
 class CuisineGenre(Enum):
@@ -43,5 +43,5 @@ class DietaryPreference(Enum):
 
 
 class GeographicCoordinates(BaseModel):
-    latitude: conint(ge=-90, le=90)
-    longitude: conint(ge=-180, le=180)
+    latitude: confloat(ge=-90, le=90)
+    longitude: confloat(ge=-180, le=180)

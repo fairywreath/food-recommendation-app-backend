@@ -9,16 +9,18 @@ class RestaurantsRepository:
 
     def add(self, restaurants):
         pass
+
     def get_from_database(self, id_):
         return self.session.query(UserModel).filter(
             UserModel.id == str(id)).first()
 
     def get(self, id_):
-        return self.session.query(RestaurantModel).filter(RestaurantModel.id == str(id_)).first()
-
+        return self.session.query(RestaurantModel).filter(
+            RestaurantModel.id == str(id_)).first()
 
     def update(self, id_, **payload):
-        restaurant = self.get(id_)
+        # restaurant = self.get(id_)
+        pass
 
     def __delete__(self, id_):
         self.session.delete(self.get(id_))

@@ -10,6 +10,8 @@ from starlette.responses import Response
 from server.repository.unit_of_work import UnitOfWork
 from server.repository.restaurants_repository import RestaurantsRepository
 from server.app import app
+
+from server.repository.models import RestaurantModel, UserModel
 from server.web_api.schemas import (
     GetUserRequestSchema, GetUserResponseSchema, UserItemSchema,
     GetRestaurantRequestSchema, GetRestaurantResponseSchema,
@@ -18,9 +20,17 @@ from server.web_api.schemas import (
     RateRestaurantSchema, GetMultipleRestaurantsRequestSchema,
     GetMultipleRestaurantsResponseSchema)
 
+
 @app.get("/")
 async def test():
+    with UnitOfWork() as unit_of_work:
+        pass
+    #     print("Testing inside unit of work!")
+    #     new_car = CarModel(name="Ferrari12")
+    #     unit_of_work.session.add(new_car)
+    #     unit_of_work.commit()
     return {"message": "Hello World"}
+
 
 @app.get("/users/{user_id}/space", response_model=GetUserResponseSchema)
 def get_user_details(user_id: UUID):
@@ -97,6 +107,7 @@ def get_recommendations_from_user(
 def receive_signal(signalNumber, frame):
     print('Received:', signalNumber)
     sys.exit()
+
 
 @app.on_event("startup")
 async def startup_event():
