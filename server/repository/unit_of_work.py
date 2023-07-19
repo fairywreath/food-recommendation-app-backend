@@ -19,6 +19,8 @@ assert DB_URL is not None, 'DB_URL environment variable needed.'
 #
 # DB_URL = f"mysql://{user}:{password}@{host}:{port}/{database}"
 
+# XXX TODO: Use sqlaclhemy asynchronous IO
+
 
 class UnitOfWork:
     def __init__(self):
@@ -27,7 +29,6 @@ class UnitOfWork:
         )
 
     def __enter__(self):
-        print(DB_URL)
         self.session = self.session_maker()
         return self
 

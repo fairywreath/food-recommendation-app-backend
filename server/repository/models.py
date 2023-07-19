@@ -105,7 +105,7 @@ restaurant_cuisine_genres = Table(
 class UserModel(Base):
     __tablename__ = 'user'
 
-    id = Column(String(ID_LENGTH), primary_key=True, default=generate_uuid())
+    id = Column(String(ID_LENGTH), primary_key=True, default=generate_uuid)
     username = Column(String(64), nullable=False, unique=True)
     email = Column(String(64), nullable=False, unique=True)
 
@@ -138,18 +138,18 @@ class UserModel(Base):
 # pictures = Column(BLOB)
 # search_history = Column(JSON, nullable=True)
 
-# def dict(self):
-#     return {
-#         'user_id': self.user_id,
-#         'user_name': self.username,
-#         'email': self.email,
-#     }
+    def dict(self):
+        return {
+            'id': self.id,
+            'username': self.username,
+            'email': self.email,
+        }
 
 
 class RestaurantModel(Base):
     __tablename__ = 'restaurant'
 
-    id = Column(String(ID_LENGTH), primary_key=True, default=generate_uuid())
+    id = Column(String(ID_LENGTH), primary_key=True, default=generate_uuid)
     name = Column(String(64), nullable=False, unique=True)
 
     address = Column(String(64))
@@ -181,7 +181,7 @@ class RestaurantModel(Base):
 class ReviewModel(Base):
     __tablename__ = 'review'
 
-    id = Column(String(ID_LENGTH), primary_key=True, default=generate_uuid())
+    id = Column(String(ID_LENGTH), primary_key=True, default=generate_uuid)
     user_id = Column(String(ID_LENGTH), ForeignKey('user.id'))
     restaurant_id = Column(String(ID_LENGTH), ForeignKey('restaurant.id'))
     review_text = Column(Text)

@@ -7,8 +7,14 @@ from uuid import UUID
 from fastapi import HTTPException
 from starlette import status
 from starlette.responses import Response
+
 from server.repository.unit_of_work import UnitOfWork
 from server.repository.restaurants_repository import RestaurantsRepository
+from server.repository.users_respository import UsersRepository
+
+from server.service.users_service import UsersService
+from server.service.users import User
+
 from server.app import app
 
 from server.repository.models import RestaurantModel, UserModel
@@ -25,10 +31,19 @@ from server.web_api.schemas import (
 async def test():
     with UnitOfWork() as unit_of_work:
         pass
-    #     print("Testing inside unit of work!")
-    #     new_car = CarModel(name="Ferrari12")
-    #     unit_of_work.session.add(new_car)
-    #     unit_of_work.commit()
+
+        # Test create user
+        # repo = UsersRepository(unit_of_work.session)
+        # service = UsersService(repo)
+
+        # Create dummb User
+        # dummy_user = User(None, "testuser", "testemail2@yahoo.co.id")
+        # created_user = service.create_user(dummy_user)
+        # print(created_user.get_id())
+        # unit_of_work.commit()
+
+        # return created_user
+
     return {"message": "Hello World"}
 
 
