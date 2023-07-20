@@ -6,8 +6,6 @@ import uuid
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 
-from sshtunnel import SSHTunnelForwarder
-
 DB_URL = os.getenv('DB_URL')
 assert DB_URL is not None, 'DB_URL environment variable needed.'
 
