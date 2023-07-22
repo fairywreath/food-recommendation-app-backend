@@ -8,3 +8,6 @@ class InvalidActionError(Exception):
 
 class APIIntegrationError(Exception):
     pass
+
+class RestaurantNotFoundError(Exception):
+    pass

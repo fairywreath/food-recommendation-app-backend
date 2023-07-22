@@ -1,25 +1,25 @@
 from server.service.exceptions import UserNotFoundError, APIIntegrationError, InvalidActionError
-from server.repository.users_respository import UsersRepository
+from server.repository.user_respository import UserRepository
 
 
-class UsersService:
-    def __init__(self, users_repository: UsersRepository):
-        self.users_repository = users_repository
+class UserService:
+    def __init__(self, user_repository: UserRepository):
+        self.user_repository = user_repository
 
     def get_user(self, user_id):
-        user = self.users_repository.get(user_id)
+        user = self.user_repository.get(user_id)
         if user is None:
             raise UserNotFoundError(f'User with id {user_id} not found')
         return user
 
-    def create_user(self, item):
-        return self.users_repository.add(item)
+    def create_user(self, name, email):
+        return self.user_repository.add(name, email)
 
     def delete_user(self, user_id):
-        user = self.users_repository.get(user_id)
+        user = self.user_repository.get(user_id)
         if user is None:
             raise UserNotFoundError(f'User with id {user_id} not found')
-        return self.users_repository.delete(user_id)
+        return self.user_repository.delete(user_id)
 
     def follow_user(self, user_id, user_to_follow_user_id):
         pass

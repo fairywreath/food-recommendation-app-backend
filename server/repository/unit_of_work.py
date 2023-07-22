@@ -5,6 +5,7 @@ from sqlalchemy.orm import sessionmaker
 import uuid
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Session
 
 DB_URL = os.getenv('DB_URL')
 assert DB_URL is not None, 'DB_URL environment variable needed.'
@@ -33,7 +34,8 @@ class UnitOfWork:
     def __exit__(self, exc_type, exc_val, traceback):
         if exc_type is not None:
             self.rollback()
-            self.session.close()
+        else:
+            self.commit()
         self.session.close()
 
     def commit(self):

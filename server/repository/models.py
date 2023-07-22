@@ -16,10 +16,10 @@ Base = declarative_base()
 
 
 def generate_uuid():
-    return str(uuid.uuid4())
+    return uuid.uuid4()
 
 
-ID_LENGTH: Final[int] = 32
+ID_LENGTH: Final[int] = 36
 
 #
 # Tables to represent relationships
@@ -114,30 +114,41 @@ class UserModel(Base):
         secondary=users_following,
         primaryjoin=(users_following.c.follower_id == id),
         secondaryjoin=(users_following.c.followed_id == id),
-        backref='followers'
+        backref='followers',
+        lazy='subquery'
     )
 
     favorite_restaurants = relationship(
         'RestaurantModel',
         secondary=favorite_restaurants,
-        backref='favorited_by'
+        backref='favorited_by',
+        lazy='subquery'
     )
 
     rated_restaurants = relationship(
         'RestaurantModel',
         secondary=user_restaurant_rating,
         backref='ratings',
-        passive_deletes=True
+        passive_deletes=True,
+        lazy='subquery'
     )
 
     reviewed_restaurants = relationship(
-        'ReviewModel', back_populates="user")
+        'ReviewModel', back_populates="user",
+        lazy='subquery')
 
     # XXX: Right now we have separate tables to list all dietary preferences etc. Is it better to store these as strings?
 
 # pictures = Column(BLOB)
 # search_history = Column(JSON, nullable=True)
-
+    def __init__(self, username, email, following=None, favorite_restaurants=None,
+                 rated_restaurants=None, reviewed_restaurants=None):
+        self.username = username
+        self.email = email
+        # self.following = following
+        # self.favorite_restaurants = favorite_restaurants
+        # self.rated_restaurants = rated_restaurants
+        # self.reviewed_restaurants = reviewed_restaurants
     def dict(self):
         return {
             'id': self.id,
@@ -168,14 +179,14 @@ class RestaurantModel(Base):
 
     # average_rating = Column(Float)
 
-    # def dict(self):
-    #     return {
-    #         'id': self.id,
-    #         'name': self.name,
-    #         'address': self.address,
-    #         'latitude': self.latitude,
-    #         'longitude': self.longitude
-    #     }
+    def dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'address': self.address,
+            'latitude': self.latitude,
+            'longitude': self.longitude
+        }
 
 
 class ReviewModel(Base):

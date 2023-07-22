@@ -16,16 +16,20 @@ class DietaryPreferencesSchema(BaseModel):
     dietary_preference: conlist(DietaryPreference)
 
 
-class UserItemSchema(BaseModel):
-    name: constr
-    email: constr
-    dietary_preferences: DietaryPreferencesSchema
-    favorite_restaurant_ids: conlist(conint)
-    following_user_ids: conlist(conint)
+class UserSchema(BaseModel):
+    name: str
+    email: str
+    # dietary_preferences: DietaryPreferencesSchema = None
+    # favorite_restaurant_ids: conlist(conint) = None
+    # following_user_ids: conlist(conint) = None
 
-
+class RestaurantSchema(BaseModel):
+    name: str
+    address: str
+    longitude: str
+    latitude: str
 class CreateUserRequestSchema(BaseModel):
-    user: UserItemSchema
+    user: UserSchema
 
     class Config:
         extra = Extra.forbid
@@ -34,7 +38,10 @@ class CreateUserRequestSchema(BaseModel):
 class CreateUserResponseSchema(BaseModel):
     id: UUID
 
-
+class DeleteUserResponseSchema(BaseModel):
+    id:UUID
+    name: str
+    email: str
 class GetUserRequestSchema(BaseModel):
     id: UUID
 
@@ -43,7 +50,7 @@ class GetUserRequestSchema(BaseModel):
 
 
 class GetUserResponseSchema(BaseModel):
-    user: UserItemSchema
+    user: UserSchema
 
 
 class RestaurantItemSchema(BaseModel):
@@ -73,8 +80,13 @@ class GetRestaurantRequestSchema(BaseModel):
 
 
 class GetRestaurantResponseSchema(BaseModel):
-    restaurant: RestaurantItemSchema
+    name: str
+    address: str
+    longitude: float
+    latitude: float
 
+    class Config:
+        extra: Extra.forbid
 
 class GetMultipleRestaurantsRequestSchema(BaseModel):
     restaurant_ids: conlist(UUID, min_length=1)
