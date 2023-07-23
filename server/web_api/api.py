@@ -1,7 +1,7 @@
 import sys
 import uuid
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -48,10 +48,10 @@ async def test():
     return {"message": "Hello World"}
 
 
-@app.get("/users/{user_id}/space", response_model=GetUserResponseSchema)
+@app.get("/users/{user_id}")
 async def get_user_details(user_id: str):
     try:
-        with UnitOfWork as unit_of_work:
+        with UnitOfWork() as unit_of_work:
             repo = UserRepository(unit_of_work.session)
             user_service = UserService(repo)
             user = user_service.get_user(user_id=user_id)
@@ -147,18 +147,31 @@ async def get_restaurant_details(restaurant_id: UUID):
 @app.get("/restaurants/multiple_details",
          response_model=GetMultipleRestaurantsResponseSchema)
 def get_multiple_restaurant_details(
-        restaurant_ids: GetMultipleRestaurantsRequestSchema):
-    # try:
-    #     with UnitOfWork as unit_of_work:
-    #         repo = RestaurantsRepository(unit_of_work.session)
-    #         restaurant_service = RestaurantService(repo)
-    #         user = restaurant_service.get_restaurant(restaurant_id=res)
-    #     return user.dict()
-    # except UserNotFoundError:
-    #     raise HTTPException(
-    #         status_code=404, detail=f"user with ID {restaurant_ids} not found"
-    #     )
-    pass
+        restaurant_ids: List[uuid.UUID]):
+    try:
+        with UnitOfWork() as unit_of_work:
+            repo = RestaurantRepository(unit_of_work.session)
+            restaurant_service = RestaurantService(repo)
+            restaurant_list = [restaurant_service.get_restaurant(restaurant_id=restaurant_id) for restaurant_id in restaurant_ids]
+        return restaurant_list.dict()
+    except UserNotFoundError:
+        raise HTTPException(
+            status_code=404, detail=f"restaurants with ID {restaurant_ids} not found"
+        )
+
+
+@app.get("restaurants/all")
+async def get_all_restaurants():
+    try:
+        with UnitOfWork() as unit_of_work:
+            repo = RestaurantRepository(unit_of_work.session)
+            restaurant_service = RestaurantService(repo)
+            restaurant_list = restaurant_service.get_all_restaurants()
+        return restaurant_list
+    except UserNotFoundError:
+        raise HTTPException(
+            status_code=404, detail=f"restaurants with ID not found"
+        )
 
 
 @app.get("/recommendations", response_model=GetRecommendationsResponseSchema)
