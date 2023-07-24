@@ -148,9 +148,8 @@ class UserModel(Base):
         # self.rated_restaurants = rated_restaurants
         # self.reviewed_restaurants = reviewed_restaurants
 
-    async def dict(self):
+    def dict(self):
         return {
-            'id': self.id,
             'username': self.username,
             'email': self.email,
         }

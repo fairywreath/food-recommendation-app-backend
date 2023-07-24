@@ -11,7 +11,7 @@ class UserRepository:
     def add(self, name, email):
         new_user = UserModel(username=name, email=email)
         self.session.add(new_user)
-        return new_user
+        return new_user.dict()
 
     def _get_from_database(self, id):
         return self.session.query(UserModel).filter(
@@ -20,7 +20,7 @@ class UserRepository:
     def get(self, id):
         user = self._get_from_database(id)
         if user is not None:
-            return User(**user.dict())
+            return user.dict()
 
     def delete(self, id):
         user = self._get_from_database(id)

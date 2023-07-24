@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Optional, List
 from uuid import UUID
 
-from fastapi import HTTPException
+from fastapi import HTTPException, Query
 from starlette import status
 from starlette.responses import Response
 from starlette.requests import Request
@@ -57,7 +57,7 @@ async def get_user_details(user_id: str):
             repo = UserRepository(unit_of_work.session)
             user_service = UserService(repo)
             user = user_service.get_user(user_id=user_id)
-        return user.dict()
+        return user
     except UserNotFoundError:
         raise HTTPException(
             status_code=404, detail=f"user with ID {user_id} not found"
@@ -74,7 +74,7 @@ async def create_user(payload: UserSchema):
         user = user_service.create_user(user_name, user_email)
         unit_of_work.commit()
         # return_payload = user
-    return user.dict()
+    return user
 
 
 @app.put("/users/{user_id}/follow/{user_id_to_follow}")
@@ -96,9 +96,8 @@ async def rate_restaurant(user_id: UUID, restaurant_id: UUID,
 # XXX: This is handled client-side, do we need this at all?
 # def get_user_location...
 
-@app.delete("/users/{user_id}/delete",
-            response_model=DeleteUserResponseSchema)
-async def delete_user(user_id: UUID):
+@app.delete("/users/delete")
+async def delete_user(user_id: UUID = Query(..., description="The UUID of the user to delete")):
     try:
         with UnitOfWork() as unit_of_work:
             repo = UserRepository(unit_of_work.session)
@@ -219,13 +218,13 @@ async def get_reviews_for_user(user_id: UUID):
             status_code=404, detail=f"no reviews for restaurant{user_id}"
         )
 
-@app.delete("/reviews/{review_id}")
-async def delete_review(review_id: UUID):
+@app.delete("/reviews/delete")
+async def delete_review(review_id: UUID= Query(..., description="The UUID of the review to delete")):
     try:
         with UnitOfWork() as unit_of_work:
             repo = ReviewRepository(unit_of_work.session)
             review_service = ReviewService(repo)
-            delete_review = review_service.delete_review(review_id)
+            delete_review = review_service.delete_review(review_id=review_id)
             unit_of_work.commit()
         return delete_review
     except UserNotFoundError:
@@ -233,20 +232,6 @@ async def delete_review(review_id: UUID):
             status_code=404, detail=f"User with ID {review_id} not found"
         )
 
-# @app.delete("/users/{user_id}/delete",
-#             response_model=DeleteUserResponseSchema)
-# async def delete_user(user_id: UUID):
-#     try:
-#         with UnitOfWork() as unit_of_work:
-#             repo = UserRepository(unit_of_work.session)
-#             user_service = UserService(repo)
-#             delete_user = user_service.delete_user(user_id=user_id)
-#             unit_of_work.commit()
-#         return delete_user
-#     except UserNotFoundError:
-#         raise HTTPException(
-#             status_code=404, detail=f"User with ID {user_id} not found"
-#         )
 @app.post("/reviews/create", status_code=status.HTTP_201_CREATED)
 async def add_reviews(payload: ReviewSchema):
     with UnitOfWork() as unit_of_work:
