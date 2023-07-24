@@ -7,15 +7,17 @@ from uuid import UUID
 from fastapi import HTTPException
 from starlette import status
 from starlette.responses import Response
-
+from starlette.requests import Request
 from server.repository.unit_of_work import UnitOfWork
 from server.repository.user_respository import UserRepository
 from server.repository.restaurant_repository import RestaurantRepository
-
+from server.repository.review_repository import ReviewRepository
 from server.service.user_service import UserService
 from server.service.restaurant_service import RestaurantService
+from server.service.review_service import ReviewService
 from server.service.user import User
 from server.service.exceptions import UserNotFoundError
+from server.service.exceptions import ReviewNotFoundError
 from server.app import app
 
 from server.repository.models import RestaurantModel, UserModel
@@ -25,7 +27,7 @@ from server.web_api.schemas import (
     GetRecommendationsFromPreferencesSchema, RecommendationsRequestSchema,
     DietaryPreferencesSchema, GetRecommendationsResponseSchema,
     RateRestaurantSchema, GetMultipleRestaurantsRequestSchema,
-    GetMultipleRestaurantsResponseSchema, DeleteUserResponseSchema, CreateUserResponseSchema)
+    GetMultipleRestaurantsResponseSchema, DeleteUserResponseSchema, CreateUserResponseSchema, ReviewSchema)
 
 
 @app.get("/")
@@ -62,8 +64,7 @@ async def get_user_details(user_id: str):
         )
 
 
-@app.post("/users/create", status_code=status.HTTP_201_CREATED,
-          response_model=CreateUserResponseSchema)
+@app.post("/users/create", status_code=status.HTTP_201_CREATED)
 async def create_user(payload: UserSchema):
     with UnitOfWork() as unit_of_work:
         repo = UserRepository(unit_of_work.session)
@@ -73,7 +74,7 @@ async def create_user(payload: UserSchema):
         user = user_service.create_user(user_name, user_email)
         unit_of_work.commit()
         # return_payload = user
-    return user
+    return user.dict()
 
 
 @app.put("/users/{user_id}/follow/{user_id_to_follow}")
@@ -88,7 +89,7 @@ def unfollow_user(user_id: UUID, user_id_to_follow: UUID):
 
 @app.put("/users/{user_id}/rate/{restaurant_id}")
 async def rate_restaurant(user_id: UUID, restaurant_id: UUID,
-                    rating: RateRestaurantSchema):
+                          rating: RateRestaurantSchema):
     pass
 
 
@@ -108,13 +109,14 @@ async def delete_user(user_id: UUID):
     except UserNotFoundError:
         raise HTTPException(
             status_code=404, detail=f"User with ID {user_id} not found"
-        )        
+        )
 
 
 @app.put("/users/{user_id}/modify_dietary")
 def modify_user_dietary_preferences(
         user_id: UUID, dietary_preferences: DietaryPreferencesSchema):
     pass
+
 
 @app.post("/restaurants/create", status_code=status.HTTP_201_CREATED)
 async def create_restaurant(payload: RestaurantSchema):
@@ -125,9 +127,11 @@ async def create_restaurant(payload: RestaurantSchema):
         address = payload.address
         longitude = payload.longitude
         latitude = payload.latitude
-        restaurant = restaurant_service.create_restaurant(name=name, address=address, longitude=longitude, latitude=latitude)
+        restaurant = restaurant_service.create_restaurant(name=name, address=address, longitude=longitude,
+                                                          latitude=latitude)
         unit_of_work.commit()
     return restaurant
+
 
 @app.get("/restaurants/{restaurant_id}/details",
          response_model=GetRestaurantResponseSchema)
@@ -137,37 +141,39 @@ async def get_restaurant_details(restaurant_id: UUID):
             repo = RestaurantRepository(unit_of_work.session)
             restaurant_service = RestaurantService(repo)
             restaurant = restaurant_service.get_restaurant(restaurant_id=restaurant_id)
-        return restaurant.dict()
+        return restaurant
     except UserNotFoundError:
         raise HTTPException(
             status_code=404, detail=f"Restaurant with ID {restaurant_id} not found"
         )
+
 
 # XXX: This is not strictly required, but is nice
 @app.get("/restaurants/multiple_details",
          response_model=GetMultipleRestaurantsResponseSchema)
 def get_multiple_restaurant_details(
         restaurant_ids: List[uuid.UUID]):
+    # try:
+    #     with UnitOfWork() as unit_of_work:
+    #         repo = RestaurantRepository(unit_of_work.session)
+    #         restaurant_service = RestaurantService(repo)
+    #         restaurant_list = [restaurant_service.get_restaurant(restaurant_id=restaurant_id) for restaurant_id in restaurant_ids]
+    #     return restaurant_list.dict()
+    # except UserNotFoundError:
+    #     raise HTTPException(
+    #         status_code=404, detail=f"restaurants with ID {restaurant_ids} not found"
+    #     )
+    pass
+
+
+@app.get("/restaurants/all")
+async def get_all_restaurants(request: Request, limit: Optional[int] = None):
     try:
         with UnitOfWork() as unit_of_work:
             repo = RestaurantRepository(unit_of_work.session)
             restaurant_service = RestaurantService(repo)
-            restaurant_list = [restaurant_service.get_restaurant(restaurant_id=restaurant_id) for restaurant_id in restaurant_ids]
-        return restaurant_list.dict()
-    except UserNotFoundError:
-        raise HTTPException(
-            status_code=404, detail=f"restaurants with ID {restaurant_ids} not found"
-        )
-
-
-@app.get("restaurants/all")
-async def get_all_restaurants():
-    try:
-        with UnitOfWork() as unit_of_work:
-            repo = RestaurantRepository(unit_of_work.session)
-            restaurant_service = RestaurantService(repo)
-            restaurant_list = restaurant_service.get_all_restaurants()
-        return restaurant_list
+            restaurant_list = restaurant_service.list_restaurants()
+        return {"restaurants": [restaurant.dict() for restaurant in restaurant_list]}
     except UserNotFoundError:
         raise HTTPException(
             status_code=404, detail=f"restaurants with ID not found"
@@ -186,7 +192,81 @@ def get_recommendations_from_user(
     pass
 
 
+@app.get("/reviews/restaurant/{restaurant_id}")
+async def get_reviews_for_restaurants(restaurant_id: UUID):
+    try:
+        with UnitOfWork() as unit_of_work:
+            repo = ReviewRepository(unit_of_work.session)
+            review_service = ReviewService(repo)
+            review_list = review_service.list_review(restaurant_id)
+        return {'reviews': [review.dict() for review in review_list]}
+    except ReviewNotFoundError:
+        raise HTTPException(
+            status_code=404, detail=f"no reviews for restaurant{restaurant_id}"
+        )
+
+
+@app.get("/reviews/user/{user_id}")
+async def get_reviews_for_user(user_id: UUID):
+    try:
+        with UnitOfWork() as unit_of_work:
+            repo = ReviewRepository(unit_of_work.session)
+            review_service = ReviewService(repo)
+            review_list = review_service.list_user_review(user_id)
+        return {'reviews': [review.dict() for review in review_list]}
+    except ReviewNotFoundError:
+        raise HTTPException(
+            status_code=404, detail=f"no reviews for restaurant{user_id}"
+        )
+
+@app.delete("/reviews/{review_id}")
+async def delete_review(review_id: UUID):
+    try:
+        with UnitOfWork() as unit_of_work:
+            repo = ReviewRepository(unit_of_work.session)
+            review_service = ReviewService(repo)
+            delete_review = review_service.delete_review(review_id)
+            unit_of_work.commit()
+        return delete_review
+    except UserNotFoundError:
+        raise HTTPException(
+            status_code=404, detail=f"User with ID {review_id} not found"
+        )
+
+# @app.delete("/users/{user_id}/delete",
+#             response_model=DeleteUserResponseSchema)
+# async def delete_user(user_id: UUID):
+#     try:
+#         with UnitOfWork() as unit_of_work:
+#             repo = UserRepository(unit_of_work.session)
+#             user_service = UserService(repo)
+#             delete_user = user_service.delete_user(user_id=user_id)
+#             unit_of_work.commit()
+#         return delete_user
+#     except UserNotFoundError:
+#         raise HTTPException(
+#             status_code=404, detail=f"User with ID {user_id} not found"
+#         )
+@app.post("/reviews/create", status_code=status.HTTP_201_CREATED)
+async def add_reviews(payload: ReviewSchema):
+    with UnitOfWork() as unit_of_work:
+        repo = ReviewRepository(unit_of_work.session)
+        review_service = ReviewService(repo)
+        restaurant_id = payload.restaurant_id
+        user_id = payload.user_id
+        review_text = payload.review_text
+        date = payload.date
+        review = review_service.create_review(restaurant_id, review_text, user_id, date)
+        unit_of_work.commit()
+    return review
+
+
 def receive_signal(signalNumber, frame):
+    """
+
+    @param signalNumber:
+    @param frame:
+    """
     print('Received:', signalNumber)
     sys.exit()
 

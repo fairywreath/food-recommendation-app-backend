@@ -23,11 +23,21 @@ class UserSchema(BaseModel):
     # favorite_restaurant_ids: conlist(conint) = None
     # following_user_ids: conlist(conint) = None
 
+
 class RestaurantSchema(BaseModel):
     name: str
     address: str
     longitude: str
     latitude: str
+
+
+class ReviewSchema(BaseModel):
+    user_id: str
+    restaurant_id: str
+    review_text: str
+    date: str
+
+
 class CreateUserRequestSchema(BaseModel):
     user: UserSchema
 
@@ -38,10 +48,13 @@ class CreateUserRequestSchema(BaseModel):
 class CreateUserResponseSchema(BaseModel):
     id: UUID
 
+
 class DeleteUserResponseSchema(BaseModel):
-    id:UUID
+    id: UUID
     name: str
     email: str
+
+
 class GetUserRequestSchema(BaseModel):
     id: UUID
 
@@ -87,6 +100,7 @@ class GetRestaurantResponseSchema(BaseModel):
 
     class Config:
         extra: Extra.forbid
+
 
 class GetMultipleRestaurantsRequestSchema(BaseModel):
     restaurant_ids: conlist(UUID, min_length=1)

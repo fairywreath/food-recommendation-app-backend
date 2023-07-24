@@ -2,7 +2,6 @@ import uuid
 from datetime import datetime
 from typing import Final
 
-
 from sqlalchemy import (
     Column, Integer, String, ForeignKey, DateTime, JSON, BLOB, Enum, ARRAY,
     Table, Float, UniqueConstraint, Text, PrimaryKeyConstraint, Date, Double,
@@ -30,7 +29,6 @@ users_following = Table(
     Column('follower_id', String(ID_LENGTH), ForeignKey('user.id')),
     Column('followed_id', String(ID_LENGTH), ForeignKey('user.id')),
 )
-
 
 favorite_restaurants = Table(
     'favorite_restaurants',
@@ -139,8 +137,8 @@ class UserModel(Base):
 
     # XXX: Right now we have separate tables to list all dietary preferences etc. Is it better to store these as strings?
 
-# pictures = Column(BLOB)
-# search_history = Column(JSON, nullable=True)
+    # pictures = Column(BLOB)
+    # search_history = Column(JSON, nullable=True)
     def __init__(self, username, email, following=None, favorite_restaurants=None,
                  rated_restaurants=None, reviewed_restaurants=None):
         self.username = username
@@ -149,7 +147,8 @@ class UserModel(Base):
         # self.favorite_restaurants = favorite_restaurants
         # self.rated_restaurants = rated_restaurants
         # self.reviewed_restaurants = reviewed_restaurants
-    def dict(self):
+
+    async def dict(self):
         return {
             'id': self.id,
             'username': self.username,
@@ -181,19 +180,25 @@ class RestaurantModel(Base):
 
     def dict(self):
         return {
-            'id': self.id,
             'name': self.name,
             'address': self.address,
             'latitude': self.latitude,
-            'longitude': self.longitude
+            'longitude': self.longitude,
+            # 'spenting_budget': self.spending_budget
         }
+
+    def __init__(self, name, address, latitude, longitude):
+        self.name = name
+        self.address = address
+        self.latitude = latitude
+        self.longitude = longitude
 
 
 class ReviewModel(Base):
     __tablename__ = 'review'
 
     id = Column(String(ID_LENGTH), primary_key=True, default=generate_uuid)
-    user_id = Column(String(ID_LENGTH), ForeignKey('user.id'))
+    user_id = Column(String(ID_LENGTH), ForeignKey('user.id'), nullable=True)
     restaurant_id = Column(String(ID_LENGTH), ForeignKey('restaurant.id'))
     review_text = Column(Text)
     # rating = Column(Integer)
@@ -205,3 +210,17 @@ class ReviewModel(Base):
     __table_args__ = (
         UniqueConstraint('user_id', 'restaurant_id'),
     )
+
+    def dict(self):
+        return {
+            'user_id': self.user_id,
+            'restaurant_id': self.restaurant_id,
+            'review_text': self.review_text,
+            'date': self.date
+        }
+
+    def __init__(self, restaurant_id, review_text, user_id, date):
+        self.user_id = user_id
+        self.restaurant_id = restaurant_id
+        self.review_text = review_text
+        self.date = date

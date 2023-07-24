@@ -11,6 +11,10 @@ class RestaurantService:
             raise RestaurantNotFoundError(f'Restaurant with id {restaurant_id} not found')
         return restaurant
     
+    def list_restaurants(self, **filters):
+        limit = filters.pop("limit", None)
+        return self.restaurant_repository.list(limit=limit, **filters)
+    
     def create_restaurant(self, name, address, longitude, latitude):
         return self.restaurant_repository.add(name=name, address=address, longitude=longitude, latitude=latitude)
     

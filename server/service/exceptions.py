@@ -9,5 +9,10 @@ class InvalidActionError(Exception):
 class APIIntegrationError(Exception):
     pass
 
+
 class RestaurantNotFoundError(Exception):
+    pass
+
+
+class ReviewNotFoundError(Exception):
     pass
