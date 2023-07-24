@@ -9,8 +9,12 @@ class UserRepository:
         self.session = session
 
     def add(self, name, email):
+        print(f'Adding user {name} {email}')
         new_user = UserModel(username=name, email=email)
         self.session.add(new_user)
+        # user_dict = added_user.dict()
+        # print(user_dict)
+
         return new_user.dict()
 
     def _get_from_database(self, id):

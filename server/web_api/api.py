@@ -27,7 +27,8 @@ from server.web_api.schemas import (
     GetRecommendationsFromPreferencesSchema, RecommendationsRequestSchema,
     DietaryPreferencesSchema, GetRecommendationsResponseSchema,
     RateRestaurantSchema, GetMultipleRestaurantsRequestSchema,
-    GetMultipleRestaurantsResponseSchema, DeleteUserResponseSchema, CreateUserResponseSchema, ReviewSchema)
+    GetMultipleRestaurantsResponseSchema, DeleteUserResponseSchema,
+    CreateUserResponseSchema, ReviewSchema)
 
 
 @app.get("/")
@@ -66,6 +67,7 @@ async def get_user_details(user_id: str):
 
 @app.post("/users/create", status_code=status.HTTP_201_CREATED)
 async def create_user(payload: UserSchema):
+    print("Detected create user POST request")
     with UnitOfWork() as unit_of_work:
         repo = UserRepository(unit_of_work.session)
         user_service = UserService(repo)
@@ -74,6 +76,8 @@ async def create_user(payload: UserSchema):
         user = user_service.create_user(user_name, user_email)
         unit_of_work.commit()
         # return_payload = user
+
+        # XXX: Correctly get generated ID here
     return user
 
 
@@ -126,8 +130,8 @@ async def create_restaurant(payload: RestaurantSchema):
         address = payload.address
         longitude = payload.longitude
         latitude = payload.latitude
-        restaurant = restaurant_service.create_restaurant(name=name, address=address, longitude=longitude,
-                                                          latitude=latitude)
+        restaurant = restaurant_service.create_restaurant(
+            name=name, address=address, longitude=longitude, latitude=latitude)
         unit_of_work.commit()
     return restaurant
 
@@ -139,12 +143,13 @@ async def get_restaurant_details(restaurant_id: UUID):
         with UnitOfWork() as unit_of_work:
             repo = RestaurantRepository(unit_of_work.session)
             restaurant_service = RestaurantService(repo)
-            restaurant = restaurant_service.get_restaurant(restaurant_id=restaurant_id)
+            restaurant = restaurant_service.get_restaurant(
+                restaurant_id=restaurant_id)
         return restaurant
     except UserNotFoundError:
         raise HTTPException(
-            status_code=404, detail=f"Restaurant with ID {restaurant_id} not found"
-        )
+            status_code=404,
+            detail=f"Restaurant with ID {restaurant_id} not found")
 
 
 # XXX: This is not strictly required, but is nice
@@ -218,8 +223,9 @@ async def get_reviews_for_user(user_id: UUID):
             status_code=404, detail=f"no reviews for restaurant{user_id}"
         )
 
-@app.delete("/reviews/delete")
-async def delete_review(review_id: UUID= Query(..., description="The UUID of the review to delete")):
+
+@app.delete("/reviews/delete/{review_id}")
+async def delete_review(review_id: UUID):
     try:
         with UnitOfWork() as unit_of_work:
             repo = ReviewRepository(unit_of_work.session)
@@ -232,6 +238,7 @@ async def delete_review(review_id: UUID= Query(..., description="The UUID of the
             status_code=404, detail=f"User with ID {review_id} not found"
         )
 
+
 @app.post("/reviews/create", status_code=status.HTTP_201_CREATED)
 async def add_reviews(payload: ReviewSchema):
     with UnitOfWork() as unit_of_work:
@@ -241,7 +248,8 @@ async def add_reviews(payload: ReviewSchema):
         user_id = payload.user_id
         review_text = payload.review_text
         date = payload.date
-        review = review_service.create_review(restaurant_id, review_text, user_id, date)
+        review = review_service.create_review(
+            restaurant_id, review_text, user_id, date)
         unit_of_work.commit()
     return review
 

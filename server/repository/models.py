@@ -139,8 +139,9 @@ class UserModel(Base):
 
     # pictures = Column(BLOB)
     # search_history = Column(JSON, nullable=True)
-    def __init__(self, username, email, following=None, favorite_restaurants=None,
-                 rated_restaurants=None, reviewed_restaurants=None):
+    def __init__(self, username, email, following=None,
+                 favorite_restaurants=None, rated_restaurants=None,
+                 reviewed_restaurants=None):
         self.username = username
         self.email = email
         # self.following = following
@@ -152,6 +153,7 @@ class UserModel(Base):
         return {
             'username': self.username,
             'email': self.email,
+            'id': self.id,
         }
 
 
@@ -184,13 +186,16 @@ class RestaurantModel(Base):
             'latitude': self.latitude,
             'longitude': self.longitude,
             # 'spenting_budget': self.spending_budget
+
+            'id': self.id,
         }
 
-    def __init__(self, name, address, latitude, longitude):
+    def __init__(self, name, address, latitude, longitude, id=None):
         self.name = name
         self.address = address
         self.latitude = latitude
         self.longitude = longitude
+        self.id = id
 
 
 class ReviewModel(Base):
@@ -215,7 +220,8 @@ class ReviewModel(Base):
             'user_id': self.user_id,
             'restaurant_id': self.restaurant_id,
             'review_text': self.review_text,
-            'date': self.date
+            'date': self.date,
+            # 'id': self.id
         }
 
     def __init__(self, restaurant_id, review_text, user_id, date):
