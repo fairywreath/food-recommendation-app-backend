@@ -22,30 +22,16 @@ def get_yelp_business_details(api_key, business_id):
         'Authorization': f'Bearer {api_key}',
     }
 
+    print(f"Yelp API request business details id {business_id}")
     # Make the API request
     response = requests.get(api_url, headers=headers)
 
-    # Check if the request was successful (status code 200)
     if response.status_code == 200:
-        # Parse the JSON response
         business_data = response.json()
-
-        # # Print or process the business details as needed
-        # print(
-        #     f"Business name: {business_data['name']}, address: {business_data['location']['display_address']}")
-        # print("Business Name:", business_data['name'])
-        # print("Address:", ', '.join(
-        #     business_data['location']['display_address']))
-        # print("Phone:", business_data.get('phone', 'N/A'))
-        # print("Rating:", business_data.get('rating', 'N/A'))
 
         name = business_data['name']
         address = business_data['location']['display_address']
         rating = business_data.get('rating', 'N/A')
-
-        # print(type(name))
-        # print(type(address))
-        # print(type(rating))
 
         return RecommendedRestaurant(name, ' '.join(address), rating)
     else:
@@ -72,6 +58,20 @@ class RecommendationService:
             query_vector=self.encoder.encode(
                 search_query).tolist(),
             limit=30,
+        )
+
+        results = []
+        for hit in hits:
+            results.append(get_yelp_business_details(
+                API_KEY, hit.payload['business_id']))
+
+        return results
+
+    def recommend(self, positive_ids):
+        hits = self.qdrant_client.recommend(
+            collection_name="my_restaurants",
+            positive=positive_ids,
+            limit=20
         )
 
         results = []

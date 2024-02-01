@@ -32,7 +32,8 @@ from server.web_api.schemas import (
     RateRestaurantSchema, GetMultipleRestaurantsRequestSchema,
     GetMultipleRestaurantsResponseSchema, DeleteUserResponseSchema,
     CreateUserResponseSchema, ReviewSchema,
-    RecommendationSearchRequestSchema, RecommendationSearchResponseSchema
+    RecommendationSearchRequestSchema, RecommendationSearchResponseSchema,
+    RecommendationSimilarityRequestSchema
 )
 
 
@@ -265,6 +266,22 @@ async def add_reviews(payload: ReviewSchema):
 @app.post("/search", status_code=status.HTTP_200_OK)
 async def recommendations_search(payload: RecommendationSearchRequestSchema):
     recommendations = reccomendation_service.search(payload.search_query)
+
+    results = []
+    for rec in recommendations:
+        results.append(RecommendationSearchResponseSchema(
+            name=rec.name,
+            address=rec.address,
+            rating=rec.rating
+        ))
+
+    return results
+
+
+@app.post("/search/similarity", status_code=status.HTTP_200_OK)
+async def recommendations_search_similarity(payload: RecommendationSimilarityRequestSchema):
+    recommendations = reccomendation_service.recommend(
+        payload.vector_ids)
 
     results = []
     for rec in recommendations:

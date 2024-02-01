@@ -149,3 +149,7 @@ class RecommendationSearchResponseSchema(BaseModel):
     name: str
     address: str
     rating: float
+
+
+class RecommendationSimilarityRequestSchema(BaseModel):
+    vector_ids: conlist(int)
