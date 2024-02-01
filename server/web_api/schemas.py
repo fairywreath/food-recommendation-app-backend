@@ -139,3 +139,13 @@ class GetRecommendationsResponseSchema(BaseModel):
 
 class RateRestaurantSchema(BaseModel):
     rating: conint(ge=0, le=10)
+
+
+class RecommendationSearchRequestSchema(BaseModel):
+    search_query: str
+
+
+class RecommendationSearchResponseSchema(BaseModel):
+    name: str
+    address: str
+    rating: float

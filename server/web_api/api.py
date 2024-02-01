@@ -20,6 +20,9 @@ from server.service.exceptions import UserNotFoundError
 from server.service.exceptions import ReviewNotFoundError
 from server.app import app
 
+from server.service.recommendation_service import (
+    RecommendationService, RecommendedRestaurant)
+
 from server.repository.models import RestaurantModel, UserModel
 from server.web_api.schemas import (
     RestaurantSchema, GetUserResponseSchema, UserSchema,
@@ -28,7 +31,12 @@ from server.web_api.schemas import (
     DietaryPreferencesSchema, GetRecommendationsResponseSchema,
     RateRestaurantSchema, GetMultipleRestaurantsRequestSchema,
     GetMultipleRestaurantsResponseSchema, DeleteUserResponseSchema,
-    CreateUserResponseSchema, ReviewSchema)
+    CreateUserResponseSchema, ReviewSchema,
+    RecommendationSearchRequestSchema, RecommendationSearchResponseSchema
+)
+
+
+reccomendation_service = RecommendationService()
 
 
 @app.get("/")
@@ -252,6 +260,21 @@ async def add_reviews(payload: ReviewSchema):
             restaurant_id, review_text, user_id, date)
         unit_of_work.commit()
     return review
+
+
+@app.post("/search", status_code=status.HTTP_200_OK)
+async def recommendations_search(payload: RecommendationSearchRequestSchema):
+    recommendations = reccomendation_service.search(payload.search_query)
+
+    results = []
+    for rec in recommendations:
+        results.append(RecommendationSearchResponseSchema(
+            name=rec.name,
+            address=rec.address,
+            rating=rec.rating
+        ))
+
+    return results
 
 
 def receive_signal(signalNumber, frame):
