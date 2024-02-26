@@ -272,7 +272,9 @@ async def recommendations_search(payload: RecommendationSearchRequestSchema):
         results.append(RecommendationSearchResponseSchema(
             name=rec.name,
             address=rec.address,
-            rating=rec.rating
+            rating=rec.rating,
+            business_id=rec.business_id,
+            vector_id=rec.vector_id
         ))
 
     return results
@@ -288,7 +290,9 @@ async def recommendations_search_similarity(payload: RecommendationSimilarityReq
         results.append(RecommendationSearchResponseSchema(
             name=rec.name,
             address=rec.address,
-            rating=rec.rating
+            rating=rec.rating,
+            business_id=rec.business_id,
+            vector_id=rec.vector_id
         ))
 
     return results

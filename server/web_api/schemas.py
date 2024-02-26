@@ -150,6 +150,10 @@ class RecommendationSearchResponseSchema(BaseModel):
     address: str
     rating: float
 
+    # For testing/demo
+    business_id: str    # YELP business id
+    vector_id: int      # qdrant vector db id
+
 
 class RecommendationSimilarityRequestSchema(BaseModel):
     vector_ids: conlist(int)
