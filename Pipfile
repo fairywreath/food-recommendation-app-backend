@@ -10,6 +10,8 @@ sqlalchemy = "*"
 alembic = "*"
 python-dotenv = "*"
 pymysql = "*"
+qdrant-client = "*"
+sentence-transformers = "*"
 
 [dev-packages]
 
