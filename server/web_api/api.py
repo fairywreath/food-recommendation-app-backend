@@ -21,7 +21,7 @@ from server.service.exceptions import ReviewNotFoundError
 from server.app import app
 
 from server.service.recommendation_service import (
-    RecommendationService, RecommendedRestaurant)
+    RecommendationService, RecommendedRestaurant, SearchFilters)
 
 from server.repository.models import RestaurantModel, UserModel
 from server.web_api.schemas import (
@@ -263,19 +263,32 @@ async def add_reviews(payload: ReviewSchema):
     return review
 
 
+def recommended_restaurant_to_schema(rec):
+    return RecommendationSearchResponseSchema(
+        name=rec.name,
+        address=rec.address,
+        # rating=rec.rating,
+        business_id=rec.business_id,
+        vector_id=rec.vector_id,
+        categories=rec.categories,
+        price_level=rec.price_level,
+        business_rating=rec.business_rating,
+        image_url=rec.image_url,
+        lon=rec.lon,
+        lat=rec.lat
+    )
+
+
 @app.post("/search", status_code=status.HTTP_200_OK)
 async def recommendations_search(payload: RecommendationSearchRequestSchema):
-    recommendations = reccomendation_service.search(payload.search_query)
+    search_filters = SearchFilters(
+        payload.categories, payload.price_levels, payload.minimum_rating, payload.geo_radius)
+    recommendations = reccomendation_service.search(
+        payload.search_query, search_filters)
 
     results = []
     for rec in recommendations:
-        results.append(RecommendationSearchResponseSchema(
-            name=rec.name,
-            address=rec.address,
-            rating=rec.rating,
-            business_id=rec.business_id,
-            vector_id=rec.vector_id
-        ))
+        results.append(recommended_restaurant_to_schema(rec))
 
     return results
 
@@ -287,14 +300,7 @@ async def recommendations_search_similarity(payload: RecommendationSimilarityReq
 
     results = []
     for rec in recommendations:
-        results.append(RecommendationSearchResponseSchema(
-            name=rec.name,
-            address=rec.address,
-            rating=rec.rating,
-            business_id=rec.business_id,
-            vector_id=rec.vector_id
-        ))
-
+        results.append(recommended_restaurant_to_schema(rec))
     return results
 
 

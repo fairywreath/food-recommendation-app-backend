@@ -141,18 +141,36 @@ class RateRestaurantSchema(BaseModel):
     rating: conint(ge=0, le=10)
 
 
+class GeoRadiusSchema(BaseModel):
+    lon: float
+    lat: float
+    radius: int
+
+
 class RecommendationSearchRequestSchema(BaseModel):
     search_query: str
+    categories: conlist(str)
+    price_levels: conlist(str)
+    minimum_rating: Optional[float] = None
+    geo_radius: Optional[GeoRadiusSchema] = None
 
 
 class RecommendationSearchResponseSchema(BaseModel):
     name: str
     address: str
-    rating: float
+    # rating: float
 
     # For testing/demo
     business_id: str    # YELP business id
     vector_id: int      # qdrant vector db id
+
+    categories: conlist(str)
+    price_level: str
+    business_rating: float
+    image_url: str
+
+    lon: float
+    lat: float
 
 
 class RecommendationSimilarityRequestSchema(BaseModel):

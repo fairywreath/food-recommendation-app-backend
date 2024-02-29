@@ -1,57 +1,90 @@
 """
 Business logic and integration with the machine learning model for the recommendation system here
 """
-from qdrant_client import QdrantClient
+from qdrant_client import models, QdrantClient
 from sentence_transformers import SentenceTransformer
 import requests
 
+COLLECTION_NAME = "restaurants_v4"
+
 
 class RecommendedRestaurant:
-    def __init__(self, name, address, rating, business_id, vector_id):
+    def __init__(self, name, address, rating, business_id, vector_id, categories, price_level, business_rating, image_url, lon, lat):
         self.name = name
         self.address = address
         self.rating = rating
         self.business_id = business_id
         self.vector_id = vector_id
 
+        self.categories = categories
+        self.price_level = price_level
+        self.business_rating = business_rating
+        self.image_url = image_url
 
-def get_yelp_business_details(api_key, business_id, vector_id):
-    # Yelp API endpoint for business details
-    api_url = f'https://api.yelp.com/v3/businesses/{business_id}'
+        self.lon = lon
+        self.lat = lat
 
-    # Set up the headers with the API key
-    headers = {
-        'Authorization': f'Bearer {api_key}',
-    }
 
-    print(
-        f"Yelp API request business details id {business_id}, vector id {vector_id}")
-    # Make the API request
-    response = requests.get(api_url, headers=headers)
+class SearchFilters:
+    def __init__(self, categories, price_levels, minimum_rating, geoloc):
+        self.categories = categories
+        self.price_levels = price_levels
+        self.minimum_rating = minimum_rating
+        self.geoloc = geoloc
 
-    if response.status_code == 200:
-        business_data = response.json()
 
-        name = business_data['name']
-        address = business_data['location']['display_address']
-        rating = business_data.get('rating', 'N/A')
+def build_query_filters(filters):
+    if filters is None:
+        return None
 
-        return RecommendedRestaurant(name, ' '.join(address), rating, business_id, vector_id)
+    musts = []
+
+    if filters.categories:
+        musts.append(
+            models.FieldCondition(
+                key="categories",
+                match=models.MatchAny(
+                    any=filters.categories),
+            ),
+        )
+
+    if filters.price_levels:
+        musts.append(
+            models.FieldCondition(
+                key="price_level",
+                match=models.MatchAny(
+                    any=filters.price_levels),
+            ),
+        )
+
+    if filters.minimum_rating:
+        musts.append(
+            models.FieldCondition(
+                key="business_rating",
+                range=models.Range(
+                    gte=filters.minimum_rating,
+                ),
+            )
+        )
+
+    if filters.geoloc:
+        musts.append(
+            models.FieldCondition(
+                key="location",
+                geo_radius=models.GeoRadius(
+                    center=models.GeoPoint(
+                        lon=filters.geoloc.lon,
+                        lat=filters.geoloc.lat,
+                    ),
+                    radius=filters.geoloc.radius,  # in meters
+                ),
+            )
+        )
+
+    if musts:
+        return models.Filter(must=musts)
     else:
-        print(
-            f"Error: Unable to fetch business details. Status code: {response.status_code}")
-        print(response.text)
-
-        return RecommendedRestaurant('dummy', ' '.join(["dummy", "address"]), 0.7, business_id, vector_id)
-
-
-def get_business_details():
-    pass
-
-
-# API_KEY = "css9Vf4WbqpNehcyHiRjR0BbVBEiNJqqY4I3Suu4cRWZxOEwFBYcKXM26u0MVk1MUCoQN2wL4wDsjTmQYiWQQbUC5uSzVLkjSrjhB7ARnL5W58emL976WAgMM965ZXYx"
-# API_KEY = "MratzzTYWgOoqLGaapngOethNmNOobelhYmK1znSzHIdLgO7heRYeHTWkQYhJyVPgLEQDgcLhyicS8QrpULX2LmKoLh58bgIRO_qDIQYThGXv3eLUG19RIhVDAe7ZXYx"
-API_KEY = "MratzzTYWgOoqLGaapnq0efhNmNO0belhYmK1znSzHIdLgO7heRYeHTwkQYhJyVPgLEQDqcLhyjcS8QrpULX2LmKoLh58bgIRO_qDlQYThGXv3eLUG19RIhVDAe7ZXYx"
+        return None
 
 
 class RecommendationService:
@@ -62,23 +95,28 @@ class RecommendationService:
             api_key="DOcS9VYxs_5nqUi6ZgF0Ld6Psfk0kLNRbsZx8JKW4xoIABC2NOQ6Qg",
         )
 
-    def search(self, search_query):
+    def search(self, search_query, search_filters=None):
         print("Searching reccs in service...")
 
+        filters = build_query_filters(search_filters)
+
         hits = self.qdrant_client.search(
-            collection_name="restaurants_v1",
+            collection_name=COLLECTION_NAME,
             query_vector=self.encoder.encode(
                 search_query).tolist(),
-            limit=15,
+            query_filter=filters,
+            limit=50,
         )
 
         results = []
         for hit in hits:
             payload = hit.payload
             rr = RecommendedRestaurant(
-                payload['name'], payload['postal_code'], payload['stars'], payload['business_id'], hit.id)
+                payload['name'], payload['postal_code'], payload['stars'], payload['business_id'], hit.id,
+                payload["categories"], payload["price_level"], payload["business_rating"], payload["image_url"],
+                payload["location"]["lon"], payload["location"]["lat"])
             if rr.address is None:
-                # XXX: Hack if no postal code found :(
+                # XXX: Hack if no postal code found :(. TODO: Just remove entries with no postal code
                 rr.address = "N2L 3G9"
             results.append(rr)
 
@@ -86,7 +124,7 @@ class RecommendationService:
 
     def recommend(self, positive_ids):
         hits = self.qdrant_client.recommend(
-            collection_name="restaurants_v1",
+            collection_name=COLLECTION_NAME,
             positive=positive_ids,
             limit=15
         )
@@ -98,7 +136,9 @@ class RecommendationService:
         for hit in hits:
             payload = hit.payload
             rr = RecommendedRestaurant(
-                payload['name'], payload['postal_code'], payload['stars'], payload['business_id'], hit.id)
+                payload['name'], payload['postal_code'], payload['stars'], payload['business_id'], hit.id,
+                payload["categories"], payload["price_level"], payload["business_rating"], payload["image_url"],
+                payload["location"]["lon"], payload["location"]["lat"])
             if rr.address is None:
                 # XXX: Hack if no postal code found :(
                 rr.address = "N2L 3G9"
